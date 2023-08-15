@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Random UPC Generator</title>
+</head>
+<body>
+<canvas id="upcCanvas" width="500" height="200"></canvas>
+
+<script>
+
+
+
+const canvas = document.getElementById('upcCanvas');
+const ctx = canvas.getContext('2d');
+
+
+const canvasHeight = 400;  // Adjust this value to a suitable height to fit all elements
+canvas.height = canvasHeight;  // Set the canvas height
+
+// Parameters
+const hasText = Math.random() < 0.5;
+const hasBorder = Math.random() < 0.5;
+const codeLength = Math.floor(Math.random() * 7) + 8;
+const hasGuardCharacters = (Math.random() < 0.5) && (codeLength % 2 === 0);
+
+// Height modification for guard characters
+const guardHeightFactor = hasGuardCharacters ? 1.1 + Math.random() * 0.4 : 1;
+
+// Barcode patterns
+const patterns = {
+    0: ["white", "white", "white", "black", "black", "white", "black"],
+    1: ["white", "white", "black", "black", "white", "white", "black"],
+    2: ["white", "white", "black", "white", "white", "black", "black"],
+    3: ["white", "black", "black", "black", "black", "white", "black"],
+    4: ["white", "black", "white", "white", "white", "black", "black"],
+    5: ["white", "black", "black", "white", "white", "white", "black"],
+    6: ["white", "black", "white", "black", "black", "black", "black"],
+    7: ["white", "black", "black", "black", "white", "black", "black"],
+    8: ["white", "black", "black", "white", "black", "black", "black"],
+    9: ["white", "white", "white", "black", "white", "black", "black"]
+};
+
+const centerCharacterColors = ["white", "black", "white", "black", "white"];
+const endCharacterColors = ["black", "white", "black"];
+
+function drawPattern(pattern, xOffset, yOffset, digit, heightFactor = 1) {
+    const width = 2;
+    const currentHeight = barcodeHeight * heightFactor;
+    
+    for (const color of pattern) {
+        ctx.fillStyle = color;
+        ctx.fillRect(xOffset, yOffset, width, currentHeight);
+        xOffset += width;
+    }
+
+    if (hasText && digit !== '') {
+        ctx.fillStyle = "black";
+        ctx.font = "14px Arial";
+        
+        const textWidth = ctx.measureText(digit).width;
+        ctx.fillText(digit, xOffset - (pattern.length * width + textWidth) / 2, yOffset + currentHeight + 20);
+    }
+
+    return pattern.length * width;
+}
+
+
+function getTotalBarcodeWidth() {
+    let width = 0;
+    for (let i = 0; i < codeLength; i++) {
+        width += patterns[i % 10].length * 2;
+    }
+
+    if (hasGuardCharacters) {
+        width += centerCharacterColors.length * 2 + endCharacterColors.length * 2 * 2;  // Multiply by 2 for both start and end guard
+    }
+
+    return width;
+}
+
+const barcodeWidth = getTotalBarcodeWidth();
+const barcodeHeight = 130;  // Base barcode height
+
+const totalHeight = barcodeHeight * guardHeightFactor + (hasText ? 30 : 0);  // Add height for text if present
+const rectHeight = totalHeight * 1.1;  // 10% padding
+
+const rectWidth = barcodeWidth * 1.1;
+
+const startingXOffset = (canvas.width - rectWidth) / 2;
+let xOffset = startingXOffset + (rectWidth - barcodeWidth) / 2;
+
+// Center the elements vertically
+// Recalculate the vertical center based on the new canvas height
+const verticalCenter = canvasHeight / 2;
+const barcodeTop = verticalCenter - totalHeight / 2;
+const borderTop = verticalCenter - rectHeight / 2;
+
+// Draw the border if hasBorder is true
+if (hasBorder) {
+    ctx.strokeStyle = 'black';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(
+        (canvas.width - rectWidth) / 2,
+        borderTop,
+        rectWidth,
+        rectHeight
+    );
+}
+
+// Draw the end guards at the beginning
+if (hasGuardCharacters) {
+    xOffset += drawPattern(endCharacterColors, xOffset, barcodeTop, '', guardHeightFactor);
+}
+
+for (let i = 0; i < codeLength; i++) {
+    const randomNumber = Math.floor(Math.random() * 10);
+    xOffset += drawPattern(patterns[randomNumber], xOffset, barcodeTop, randomNumber);
+
+    if (i === Math.floor(codeLength / 2) - 1 && hasGuardCharacters) {
+        xOffset += drawPattern(centerCharacterColors, xOffset, barcodeTop, '', guardHeightFactor);
+    }
+}
+
+// Draw the end guards at the end
+if (hasGuardCharacters) {
+    xOffset += drawPattern(endCharacterColors, xOffset, barcodeTop, '', guardHeightFactor);
+}
+
+
+</script>
+</body>
+</html>
