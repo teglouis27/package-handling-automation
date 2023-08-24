@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<title>Random 'Spiky' Polygon on Canvas</title>
+
+<meta name="description" content="This generates a random 'Spiky' polygon with a random color.">
+
+<link rel="apple-touch-icon" sizes="180x180" href="romogi-favicons/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="romogi-favicons/favicon-32x32.png">
+<link rel="icon" type="image/png" sizes="16x16" href="romogi-favicons/favicon-16x16.png">
+<link rel="manifest" href="romogi-favicons/site.webmanifest">
+<link rel="shortcut icon" href="romogi-favicons/favicon.ico" type="image/x-icon" />
+
+<head>
+    <style>
+        body, html {
+            height: 100%;
+            width: 100%;
+            overflow: hidden;
+            cursor: pointer;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+        }
+    </style>
+</head>
+
+<body>
+    <canvas id="canvas"></canvas>
+
+    <script>
+        const canvas = document.getElementById("canvas");
+        const ctx = canvas.getContext("2d");
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        let polygonPointsQuantity = 3;
+
+        let leftMostPossibleBoundary = 0;
+        let topMostPossibleBoundary = window.innerHeight;
+        let rightMostPossibleBoundary = window.innerWidth;
+        let bottomMostPossibleBoundary = 0;
+
+        function random_of_type(min, max, type) {
+    const raw = crypto.getRandomValues(new Uint32Array(1))[0] / 2 ** 32; // Raw value between 0 and 1
+
+    switch (type) {
+        case "boolean":
+            return raw < 0.5;
+        case "integer":
+            return Math.floor(raw * (max - min + 1) + min);
+        case "rational":
+            return raw * (max - min) + min;
+        case "color":
+            const r = random_of_type(0, 255, "integer");
+            const g = random_of_type(0, 255, "integer");
+            const b = random_of_type(0, 255, "integer");
+            return `rgb(${r},${g},${b})`;
+        default:
+            throw new Error("Invalid type specified");
+    }
+}
+
+
+
+        function generatePossiblyUnorderedPolygonalPoints(pointQuantity, leftBoundary, topBoundary, rightBoundary, bottomBoundary) {
+            let polygonPoints = [];
+            while (polygonPoints.length < pointQuantity) {
+                let newPoint = [random_of_type(leftBoundary, rightBoundary, "rational"), random_of_type(bottomBoundary, topBoundary, "rational")];
+                if (!polygonPoints.some(point => point[0] === newPoint[0] && point[1] === newPoint[1])) {
+                    polygonPoints.push(newPoint);
+                }
+            }
+            return polygonPoints;
+        }
+
+        function findCenter(points) {
+            let x = 0, y = 0;
+            for (let i = 0; i < points.length; i++) {
+                x += points[i][0];
+                y += points[i][1];
+            }
+            return [x / points.length, y / points.length];
+        }
+
+        function findAngles(center, points) {
+            let pointAngles = [];
+            for (let i = 0; i < points.length; i++) {
+                let dx = points[i][0] - center[0];
+                let dy = points[i][1] - center[1];
+                pointAngles.push([Math.atan2(dy, dx), points[i]]);
+            }
+            pointAngles.sort((a, b) => a[0] - b[0]);
+            return pointAngles.map(item => item[1]);
+        }
+
+
+        polygonPointsQuantity = random_of_type(3, 20, "integer");
+
+        const randomCanvasPolygonPoints = generatePossiblyUnorderedPolygonalPoints(polygonPointsQuantity, leftMostPossibleBoundary, topMostPossibleBoundary, rightMostPossibleBoundary, bottomMostPossibleBoundary);
+        const orderedRandomCanvasPolygonPoints = findAngles(findCenter(randomCanvasPolygonPoints), randomCanvasPolygonPoints);
+        
+        function drawPolygonOnCanvas(pointsArray) {
+            ctx.beginPath();
+            ctx.moveTo(pointsArray[0][0], pointsArray[0][1]);
+            
+            for (let i = 1; i < pointsArray.length; i++) {
+                ctx.lineTo(pointsArray[i][0], pointsArray[i][1]);
+            }
+            
+            ctx.closePath();
+            ctx.fillStyle = random_of_type(null, null, "color");
+            ctx.fill();
+            ctx.stroke();
+        }
+
+
+        drawPolygonOnCanvas(orderedRandomCanvasPolygonPoints);
+
+        document.body.addEventListener("click", () => window.location.reload(true));
+    </script>
+</body>
+
+</html>
